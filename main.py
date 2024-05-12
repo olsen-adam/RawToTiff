@@ -75,7 +75,7 @@ def convertImages(imageList):
     
     completedImages = 0
     
-    for n in tqdm.tqdm(range(len(imageList))):
+    for n in tqdm.tqdm(range(len(imageList)),bar_format='{l_bar}{bar:20}{r_bar}{bar:-10b}'):
         with rawpy.imread(oldFolderPath + imageList[n]) as raw:
             rgb = raw.postprocess()
         imageio.imsave(newFolderPath + imageList[n].replace(".ARW", ".TIFF"), rgb)
