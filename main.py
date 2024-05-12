@@ -1,4 +1,4 @@
-import os, sys, time, rawpy, imageio
+import os, sys, time, rawpy, imageio, tqdm
 
 def printIntro(animation=True):
     
@@ -46,6 +46,9 @@ def printMenu():
     print(menu)
    
 def getImageName():
+    if os.listdir("Old Photos") == []:
+        print("No images found in the 'Old Photos' folder. Exiting...")
+        exit(0)
     while True:
         imageName = input("Enter the name of the image file (e.g. 'DSC00256.raw'): ")
         if os.path.exists(f"Old Photos/{imageName}"):
@@ -55,8 +58,6 @@ def getImageName():
     return [imageName]
 
 def getAllImageNames():
-    input("Press Enter to convert all images in the 'Old Photos' folder. Press Ctrl/CMD + C to cancel.")
-    
     imageList = []
     for file in os.listdir("Old Photos"):
         if file.lower().endswith(".arw"):
@@ -66,15 +67,27 @@ def getAllImageNames():
     return sorted(imageList)
 
 def convertImages(imageList):
-    folderPath = "Old Photos/"
+    oldFolderPath = "Old Photos/"
+    newFolderPath = "New Photos/"
     
     clearScreen()
     print("Converting images...")
     
-    for imageName in imageList:
-        with rawpy.imread(folderPath + imageName) as raw:
-            rgb = raw.postprocess(gamma=(1,1), no_auto_bright=False, output_bps=16)
-        imageio.imsave('New Photos/' + imageName + ".tiff", rgb)
+    completedImages = 0
+    
+    for n in tqdm.tqdm(range(len(imageList))):
+        with rawpy.imread(oldFolderPath + imageList[n]) as raw:
+            rgb = raw.postprocess()
+        imageio.imsave(newFolderPath + imageList[n].replace(".ARW", ".TIFF"), rgb)
+        completedImages += 1
+        
+    return completedImages
+
+def exitMessage(nImagesCompleted, nImagesTotal):
+    print(f"Successfully converted {nImagesCompleted}/{nImagesTotal} images.")
+    print("Exiting...")
+    time.sleep(2)
+    exit(0)
 
 def main():
     printIntro()
@@ -94,11 +107,16 @@ def main():
             choice = None
             time.sleep(2)
     
+    if not imageList:
+        print("No images found. Exiting...")
+        exit(0)
+    
     userInput = input(f"Confirming conversion of {len(imageList)} images. Continue? (y/n): ").lower()
     if userInput == "y":
-        convertImages(imageList)
+        nImagesCompleted = convertImages(imageList)
+        exitMessage(nImagesCompleted, len(imageList))
     else:
-        main()
+        main()   
      
 if __name__ == "__main__":
     main()
